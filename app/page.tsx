@@ -1,113 +1,125 @@
+'use client'
 import Image from 'next/image'
+import { useEffect, useRef, useState } from 'react'
+import IconArrow from '@/public/icons/icon-arrow.svg'
+import { MapContainer, Marker, TileLayer } from 'react-leaflet'
+import { LatLngExpression } from 'leaflet'
+import "leaflet/dist/leaflet.css"
+import "leaflet-defaulticon-compatibility"
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css"
+import { setupFsCheck } from 'next/dist/server/lib/router-utils/filesystem'
 
+
+
+type Location = {
+  country: string,
+  region: string,
+  city: string,
+  lat: number,
+  lng: number,
+  postalCode: string,
+  timezone: string,
+  geonameId: number
+}
+type ServiceProviderDetail = {
+  asn: number,
+  name: string,
+  route: string,
+  domain: string,
+  type: string
+}
+interface IpAddress {
+  ip: string,
+  location: Location,
+  as: ServiceProviderDetail,
+  isp: string
+}
+
+// TODO TOMORROW 
+// 1. finising API Call
+// 2. map implementation
+// 3. make it look nice
 export default function Home() {
+  const [ipAddress, setIpAddress] = useState('')
+  const [addressDetail, setAddressDetail] = useState<IpAddress>()
+  const addressDetailElement = useRef<HTMLDivElement>(null)
+  const [coordinate, setCoordinate] = useState<LatLngExpression>([-8.5097, 115.2004])
+  const [isLoading, setLoading] = useState(false)
+
+
+  const handleIpSearch = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`api/ip-address?ip=${ipAddress}`, {
+        method: 'GET'
+      })
+      const data = await response.json() as IpAddress
+      setAddressDetail(data)
+      setCoordinate([data.location.lat, data.location.lng])
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message)
+      }
+      else {
+        alert(err)
+      }
+    }
+    setLoading(false)
+
+  }
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="flex min-h-screen flex-col items-center justify-between h-screen">
+      <section className='relative p-8 h-[45%] md:h-[30%] bg-purple-500 w-full'>
+        <h1 className='text-2xl text-center text-white font-semibold mb-4'>IP Address Tracker</h1>
+        <div className='bg-white rounded-lg flex max-w-md mx-auto'>
+          <input type="text" className='p-4 rounded-lg w-full focus:outline-none' placeholder='ip address ' value={ipAddress} onChange={(e) => setIpAddress(e.target.value)} />
+          <button onClick={handleIpSearch} className='aspect-square h-full bg-black p-4 rounded-r-lg'>
+            <Image src={IconArrow} alt='arrow-icon' width={24} height={24} />
+          </button>
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        {isLoading ? <p className='z-[999] p-4 bg-white shadow-md flex items-center w-24 h-24 absolute left-1/2 -translate-x-1/2 -bottom-12 rounded-lg font-semibold'>Loading...</p> : <></>}
+        {(addressDetail && !isLoading) ?
+          <div ref={addressDetailElement} className={` max-sm:text-center z-[999] p-4 md:p-6 grid grid-cols-1 max-sm:w-[80%] w-[60%] md:grid-cols-4 gap-4 absolute left-1/2 -translate-x-1/2 bg-white rounded-lg max-sm:h-72 h-32 -bottom-16 max-sm:-bottom-36`}>
+            <div className='text-lg font-semibold md:border-r-2 '>
+              <p className='text-sm text-gray-500 md:mb-2 leading-none'>IP Address</p>
+              <p>{addressDetail.ip ?? '-'}</p>
+            </div>
+            <div className='text-lg font-semibold md:border-r-2 '>
+              <p className='text-sm text-gray-500 md:mb-2 leading-none'>Location</p>
+              <p>{addressDetail.location.country ?? '-'}, {addressDetail.location.city ?? '-'}</p>
+            </div>
+            <div className='text-lg font-semibold md:border-r-2 '>
+              <p className='text-sm text-gray-500 md:mb-2 leading-none'>Timezone</p>
+              <p>UTC {addressDetail.location.timezone ?? '-'}</p>
+            </div>
+            <div className='text-lg font-semibold '>
+              <p className='text-sm text-gray-500 md:mb-2 leading-none'>ISP</p>
+              <p className='leading-snug'>{addressDetail.isp ?? '-'}</p>
+            </div>
+          </div> : <></>
+        }
+      </section>
+      <section className='h-[55%] md:h-[70%] bg-red-300 w-full'>
+        <Map position={coordinate} />
+      </section>
     </main>
   )
+}
+
+type MapProps = {
+  position: LatLngExpression
+}
+function Map({ position }: MapProps) {
+  const [coordinate, setCoordinate] = useState<LatLngExpression>(position)
+  useEffect(() => {
+    setCoordinate(position)
+  }, [position])
+  return <MapContainer center={coordinate} zoom={13} scrollWheelZoom style={{ minHeight: '200px', minWidth: '200px', height: '100%', width: '100%' }}>
+
+    <TileLayer
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+    <Marker position={position} />
+  </MapContainer>
+
 }
